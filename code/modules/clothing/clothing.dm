@@ -340,9 +340,7 @@ BLIND     // can't see anything
 
 				name = "mangled [name]"
 				desc = "[desc]<br>They have the toe caps cut off of them."
-				if("exclude" in species_restricted)
-					species_restricted -= UNATHI
-					species_restricted -= TAJARAN
+				species_restricted = null
 				src.icon_state += "_cut"
 				user.update_inv_shoes()
 				clipped_status = CLIPPED
