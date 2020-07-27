@@ -77,6 +77,12 @@ var/list/ai_verbs_default = list(
 	var/last_announcement = ""
 	var/wipe_timer_id = 0
 
+	var/mob/camera/Eye/ai/eyeobj
+	var/sprint = 10
+	var/cooldown = 0
+	var/acceleration = 1
+	var/obj/machinery/hologram/holopad/holo = null
+
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	verbs |= ai_verbs_default
 
@@ -154,17 +160,12 @@ var/list/ai_verbs_default = list(
 			if (B.brainmob.mind)
 				B.brainmob.mind.transfer_to(src)
 
-			to_chat(src, "<B>You are playing the station's AI. The AI cannot move, but can interact with many objects while viewing them (through cameras).</B>")
-			to_chat(src, "<B>To look at other parts of the station, click on yourself to get a camera menu.</B>")
-			to_chat(src, "<B>While observing through a camera, you can use most (networked) devices which you can see, such as computers, APCs, intercoms, doors, etc.</B>")
-			to_chat(src, "To use something, simply click on it.")
-			to_chat(src, "Use say :b to speak to your cyborgs through binary.")
-			if (!(ticker && ticker.mode && (mind in ticker.mode.malf_ai)))
-				show_laws()
-				to_chat(src, "<b>These laws may be changed by other players, or by you being the traitor.</b>")
+			announce_role()
 
 			job = "AI"
 
+	create_eye()
+	
 	new /obj/machinery/ai_powersupply(src)
 
 	hud_list[HEALTH_HUD]      = image('icons/mob/hud.dmi', src, "hudblank")
@@ -177,6 +178,16 @@ var/list/ai_verbs_default = list(
 	hud_list[SPECIALROLE_HUD] = image('icons/mob/hud.dmi', src, "hudblank")
 
 	ai_list += src
+
+/mob/living/silicon/ai/proc/announce_role()
+	to_chat(src, "<B>You are playing the station's AI. The AI cannot move, but can interact with many objects while viewing them (through cameras).</B>")
+	to_chat(src, "<B>To look at other parts of the station, click on yourself to get a camera menu.</B>")
+	to_chat(src, "<B>While observing through a camera, you can use most (networked) devices which you can see, such as computers, APCs, intercoms, doors, etc.</B>")
+	to_chat(src, "To use something, simply click on it.")
+	to_chat(src, "Use say \":b to speak to your cyborgs through binary.")
+	if (!(ticker && ticker.mode && (src.mind in ticker.mode.malf_ai)))
+		src.show_laws()
+		to_chat(src, "<b>These laws may be changed by other players, or by you being the traitor.</b>")
 
 /mob/living/silicon/ai/Destroy()
 	connected_robots.Cut()
@@ -576,51 +587,11 @@ var/list/ai_verbs_default = list(
 	return
 
 /mob/living/silicon/ai/bullet_act(obj/item/projectile/Proj)
-	..(Proj)
+	. = ..()
+	if(. == PROJECTILE_ABSORBED || . == PROJECTILE_FORCE_MISS)
+		return
+
 	updatehealth()
-	return 2
-
-/mob/living/silicon/ai/attack_alien(mob/living/carbon/xenomorph/humanoid/M)
-	if (!ticker)
-		to_chat(M, "You cannot attack people before the game has started.")
-		return
-
-	if (istype(loc, /turf) && istype(loc.loc, /area/start))
-		to_chat(M, "No attacking people at spawn, you jackass.")
-		return
-
-	switch(M.a_intent)
-
-		if ("help")
-			visible_message("<span class='notice'>[M] caresses [src]'s plating with its scythe like arm.</span>")
-
-		else //harm
-			var/damage = rand(10, 20)
-			if (prob(90))
-				playsound(src, 'sound/weapons/slash.ogg', VOL_EFFECTS_MASTER)
-				visible_message("<span class='warning'><B>[M] has slashed at [src]!</B></span>")
-				if(prob(8))
-					flash_eyes(affect_silicon = 1)
-				adjustBruteLoss(damage)
-				updatehealth()
-			else
-				playsound(src, 'sound/weapons/slashmiss.ogg', VOL_EFFECTS_MASTER)
-				visible_message("<span class='warning'><B>[M] took a swipe at [src]!</B></span>")
-	return
-
-/mob/living/silicon/ai/attack_animal(mob/living/simple_animal/M)
-	M.do_attack_animation(src)
-	if(M.melee_damage_upper == 0)
-		M.emote("[M.friendly] [src]")
-	else
-		if(length(M.attack_sound))
-			playsound(src, pick(M.attack_sound), VOL_EFFECTS_MASTER)
-		visible_message("<span class='userdanger'><B>[M]</B>[M.attacktext] [src]!</span>")
-		M.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [src.name] ([src.ckey])</font>")
-		src.attack_log += text("\[[time_stamp()]\] <font color='orange'>was attacked by [M.name] ([M.ckey])</font>")
-		var/damage = rand(M.melee_damage_lower, M.melee_damage_upper)
-		adjustBruteLoss(damage)
-		updatehealth()
 
 /mob/living/silicon/ai/reset_view(atom/A)
 	if(camera)

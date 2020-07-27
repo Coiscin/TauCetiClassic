@@ -24,6 +24,10 @@
 	new_player_list -= src
 	return ..()
 
+/mob/dead/new_player/say(msg)
+	if(client)
+		client.ooc(msg)
+
 /mob/dead/new_player/verb/new_player_panel()
 	set src = usr
 	new_player_panel_proc()
@@ -288,7 +292,7 @@ commented cause polls are kinda broken now, needs refactoring */
 		return FALSE
 	if(!job.player_old_enough(client))
 		return FALSE
-	if(!job.is_species_permitted(client))
+	if(!job.is_species_permitted(client.prefs.species))
 		return FALSE
 	if(!job.map_check())
 		return FALSE
@@ -319,13 +323,13 @@ commented cause polls are kinda broken now, needs refactoring */
 	// AIs don't need a spawnpoint, they must spawn at an empty core
 	if(character.mind.assigned_role == "AI")
 
-		character = character.AIize(move=0) // AIize the character, but don't move them yet
-
 		// IsJobAvailable for AI checks that there is an empty core available in this list
 		var/obj/structure/AIcore/deactivated/C = empty_playable_ai_cores[1]
 		empty_playable_ai_cores -= C
 
 		character.loc = C.loc
+
+		character = character.AIize(move=0) // AIize the character, but don't move them yet
 
 		//AnnounceCyborg(character, rank, "has been downloaded to the empty core in \the [character.loc.loc]")
 		ticker.mode.latespawn(character)
@@ -357,6 +361,9 @@ commented cause polls are kinda broken now, needs refactoring */
 
 	if(!issilicon(character))
 		SSquirks.AssignQuirks(character, character.client, TRUE)
+
+	if(character.client)
+		character.client.guard.time_velocity_spawn = world.timeofday
 
 	qdel(src)
 
@@ -540,6 +547,9 @@ commented cause polls are kinda broken now, needs refactoring */
 /mob/dead/new_player/proc/close_spawn_windows()
 	src << browse(null, "window=latechoices") //closes late choices window
 	src << browse(null, "window=playersetup") //closes the player setup window
+	src << browse(null, "window=preferences_window")
+	if(client)
+		client.clear_character_previews()
 
 /mob/dead/new_player/proc/has_admin_rights()
 	return (client && client.holder && (client.holder.rights & R_ADMIN))

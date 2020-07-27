@@ -63,10 +63,15 @@ var/const/MAX_SAVE_SLOTS = 10
 	var/undershirt = 1					//undershirt type
 	var/socks = 1						//socks type
 	var/backbag = 2						//backpack type
+	var/use_skirt = FALSE				//using skirt uniform version
 	var/h_style = "Bald"				//Hair type
 	var/r_hair = 0						//Hair color
 	var/g_hair = 0						//Hair color
 	var/b_hair = 0						//Hair color
+	var/grad_style = "none"				//Gradient style
+	var/r_grad = 0						//Gradient color
+	var/g_grad = 0						//Gradient color
+	var/b_grad = 0						//Gradient color
 	var/f_style = "Shaved"				//Face hair type
 	var/r_facial = 0					//Face hair color
 	var/g_facial = 0					//Face hair color
@@ -88,18 +93,8 @@ var/const/MAX_SAVE_SLOTS = 10
 	var/religion = "None"               //Religious association.
 	var/nanotrasen_relation = "Neutral"
 
-	//Jobs, uses bitflags
-	var/job_civilian_high = 0
-	var/job_civilian_med = 0
-	var/job_civilian_low = 0
-
-	var/job_medsci_high = 0
-	var/job_medsci_med = 0
-	var/job_medsci_low = 0
-
-	var/job_engsec_high = 0
-	var/job_engsec_med = 0
-	var/job_engsec_low = 0
+	//Job preferences 2.0 - indexed by job title , no key or value implies never
+	var/list/job_preferences = list()
 
 	//Keeps track of preferrence for not getting any wanted jobs
 	var/alternate_option = RETURN_TO_LOBBY
@@ -122,6 +117,8 @@ var/const/MAX_SAVE_SLOTS = 10
 	var/list/neutral_quirks = list()
 	var/list/all_quirks = list()
 	var/list/character_quirks = list()
+
+	var/list/allowed_quirks = list()
 
 	// OOC Metadata:
 	var/metadata = ""
@@ -319,6 +316,8 @@ var/const/MAX_SAVE_SLOTS = 10
 				new /obj/item/organ/external/head/robot/ipc/double(null, character)
 			if("Pillar")
 				new /obj/item/organ/external/head/robot/ipc/pillar(null, character)
+			if("Human")
+				new /obj/item/organ/external/head/robot/ipc/human(null, character)
 
 	character.r_eyes = r_eyes
 	character.g_eyes = g_eyes
@@ -327,6 +326,10 @@ var/const/MAX_SAVE_SLOTS = 10
 	character.r_hair = r_hair
 	character.g_hair = g_hair
 	character.b_hair = b_hair
+
+	character.r_grad = r_grad
+	character.g_grad = g_grad
+	character.b_grad = b_grad
 
 	character.r_facial = r_facial
 	character.g_facial = g_facial
@@ -339,6 +342,7 @@ var/const/MAX_SAVE_SLOTS = 10
 	character.s_tone = s_tone
 
 	character.h_style = h_style
+	character.grad_style = grad_style
 	character.f_style = f_style
 
 	character.home_system = home_system
@@ -353,9 +357,9 @@ var/const/MAX_SAVE_SLOTS = 10
 		var/obj/item/organ/internal/IO = character.organs_by_name[name]
 		var/status = organ_data[name]
 
-		if(status == "amputated")
+		if(status == "amputated" && BP)
 			qdel(BP) // Destroy will handle everything
-		if(status == "cyborg")
+		if(status == "cyborg" && BP)
 			var/zone = BP.body_zone
 			qdel(BP)
 			switch(zone)
@@ -367,9 +371,9 @@ var/const/MAX_SAVE_SLOTS = 10
 					new /obj/item/organ/external/l_leg/robot(null, character)
 				if(BP_R_LEG)
 					new /obj/item/organ/external/r_leg/robot(null, character)
-		if(status == "assisted")
+		if(status == "assisted" && IO)
 			IO.mechassist()
-		else if(status == "mechanical")
+		else if(status == "mechanical" && IO)
 			IO.mechanize()
 
 		else continue
@@ -404,6 +408,7 @@ var/const/MAX_SAVE_SLOTS = 10
 	if(backbag > 5 || backbag < 1)
 		backbag = 1 //Same as above
 	character.backbag = backbag
+	character.use_skirt = use_skirt
 
 	//Debugging report to track down a bug, which randomly assigned the plural gender to people.
 	if(character.gender in list(PLURAL, NEUTER))

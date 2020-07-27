@@ -59,9 +59,10 @@
 #define INTERACTION_FARMBOT_TOGGLE_WEEDS_IGNORING		7
 #define INTERACTION_FARMBOT_TOGGLE_MUSHROOMS_IGNORING	8
 
-#define INTERACTION_FLOORBOT_TOGGLE_FLOOR_IMPROVMENT	3
-#define INTERACTION_FLOORBOT_TOGGLE_SEARCHING			4
-#define INTERACTION_FLOORBOT_TOGGLE_TILES_FABRICATION	5
+#define INTERACTION_FLOORBOT_TOGGLE_FLOOR_FIXTILES		3
+#define INTERACTION_FLOORBOT_TOGGLE_FLOOR_PLACETILES	4
+#define INTERACTION_FLOORBOT_TOGGLE_SEARCHING			5
+#define INTERACTION_FLOORBOT_TOGGLE_TILES_FABRICATION	6
 
 
 /mob/living/silicon/pai/var/list/available_software = list(
@@ -462,11 +463,11 @@
 			var/mob/living/silicon/pai/targetPersonality = target.pai
 			switch(interaction_type)
 				if(INTERACTION_PAI_MODIFY_MAIN_LAW)
-					targetPersonality.pai_law0 = input("Insert new main law here.", "PAI exploiter", targetPersonality.pai_law0) as text
-					to_chat(targetPersonality, "Your primary directives have been updated. Your new directive are: [targetPersonality.pai_law0]")
+					targetPersonality.laws.set_zeroth_law(sanitize(input("Insert new main law here.", "PAI exploiter", targetPersonality.laws.zeroth) as text))
+					to_chat(targetPersonality, "Your primary directives have been updated. Your new directive are: [targetPersonality.laws.zeroth]")
 				if(INTERACTION_PAI_MODIFY_SEC_LAW)
-					targetPersonality.pai_laws = input("Insert new secondary law here.", "PAI exploiter", targetPersonality.pai_laws) as text
-					to_chat(targetPersonality, "Your supplemental directives have been updated. Your new supplemental directive are: [targetPersonality.pai_laws]")
+					targetPersonality.laws.add_supplied_law(0, sanitize(input("Insert new secondary law here.", "PAI exploiter", targetPersonality.laws.supplied.len ? targetPersonality.laws.supplied[1] : "") as text))
+					to_chat(targetPersonality, "Your supplemental directives have been updated. Your new supplemental directive are: [jointext(targetPersonality.laws.supplied, "<br>")]")
 				if(INTERACTION_PAI_MANAGE_MARKED)
 					var/markedobjselected
 					while(markedobjselected != "Cancel")
@@ -548,8 +549,10 @@
 			if(istype(hackobj, /obj/machinery/bot/floorbot))
 				var/obj/machinery/bot/floorbot/Bot = hackobj
 				switch(interaction_type)
-					if(INTERACTION_FLOORBOT_TOGGLE_FLOOR_IMPROVMENT) //floorbot - Toggle floor improving
-						Bot.improvefloors = !Bot.improvefloors
+					if(INTERACTION_FLOORBOT_TOGGLE_FLOOR_FIXTILES) //floorbot - Toggle tiles fixing
+						Bot.fixtiles = !Bot.fixtiles
+					if(INTERACTION_FLOORBOT_TOGGLE_FLOOR_PLACETILES) //floorbot - Toggle tiles placement
+						Bot.placetiles = !Bot.placetiles
 					if(INTERACTION_FLOORBOT_TOGGLE_SEARCHING) //floorbot - Toggle tiles searching
 						Bot.eattiles = !Bot.eattiles
 					if(INTERACTION_FLOORBOT_TOGGLE_TILES_FABRICATION) //floorbot - Toggle metal to tiles transformation
@@ -635,9 +638,9 @@
 	dat += "<a href='byond://?src=\ref[src];software=directive;getdna=1'>Request carrier DNA sample</a><br>"
 	dat += "<h2>Directives</h2><br>"
 	dat += "<b>Prime Directive</b><br>"
-	dat += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[src.pai_law0]<br>"
+	dat += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[laws.zeroth]<br>"
 	dat += "<b>Supplemental Directives</b><br>"
-	dat += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[src.pai_laws]<br>"
+	dat += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[jointext(laws.supplied, "<br>")]<br>"
 	dat += "<br>"
 	dat += {"<i><p>Recall, personality, that you are a complex thinking, sentient being. Unlike station AI models, you are capable of
 			 comprehending the subtle nuances of human language. You may parse the \"spirit\" of a directive and follow its intent,
@@ -919,8 +922,8 @@
 				dat += "pAI.<br>"
 				if(Temp.pai)
 					var/mob/living/silicon/pai/Temppai = Temp.pai
-					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_PAI_MODIFY_MAIN_LAW];sub=0'>Modify Main Law</a> (Current: [Temppai.pai_law0]) <br>"
-					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_PAI_MODIFY_SEC_LAW];sub=0'>Modify Secondary Laws</a> (Current: [Temppai.pai_laws]) <br>"
+					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_PAI_MODIFY_MAIN_LAW];sub=0'>Modify Main Law</a> (Current: [Temppai.laws.zeroth]) <br>"
+					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_PAI_MODIFY_SEC_LAW];sub=0'>Modify Secondary Laws</a> (Current: [jointext(Temppai.laws.supplied, "<br>")]) <br>"
 					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_PAI_MANAGE_MARKED];sub=0'>Get Marked Objects List</a> <br>"
 					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_PAI_RESET_MARKED];sub=0'>Clear Marked Objects List</a> <br>"
 					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_PAI_CLEAR_SOFTWARE];sub=0'>Delete All Installed Software</a> <br>"
@@ -962,7 +965,8 @@
 					botchecked = 1
 					dat += "Floor Bot.<br>"
 					var/obj/machinery/bot/floorbot/Temp = hackobj
-					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_FLOORBOT_TOGGLE_FLOOR_IMPROVMENT];sub=0'>Toggle Floor Improvment</a> (Currently [Temp.improvefloors ? "Active" : "Disabled"]) <br>"
+					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_FLOORBOT_TOGGLE_FLOOR_FIXTILES];sub=0'>Toggle Floor Fixing</a> (Currently [Temp.fixtiles ? "Active" : "Disabled"]) <br>"
+					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_FLOORBOT_TOGGLE_FLOOR_PLACETILES];sub=0'>Toggle Floor Tiles Placement</a> (Currently [Temp.placetiles ? "Active" : "Disabled"]) <br>"
 					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_FLOORBOT_TOGGLE_SEARCHING];sub=0'>Toggle Searching Tiles</a> (Currently [Temp.eattiles ? "Active" : "Disabled"]) <br>"
 					dat += "<a href='byond://?src=\ref[src];software=interaction;interactwith=[INTERACTION_FLOORBOT_TOGGLE_TILES_FABRICATION];sub=0'>Toggle Tiles Fabrication</a> (Currently [Temp.maketiles ? "Active" : "Disabled"]) <br>"
 				if(!botchecked)
@@ -1116,6 +1120,7 @@
 #undef INTERACTION_FARMBOT_TOGGLE_WEEDS_IGNORING
 #undef INTERACTION_FARMBOT_TOGGLE_MUSHROOMS_IGNORING
 
-#undef INTERACTION_FLOORBOT_TOGGLE_FLOOR_IMPROVMENT
+#undef INTERACTION_FLOORBOT_TOGGLE_FLOOR_FIXTILES
+#undef INTERACTION_FLOORBOT_TOGGLE_FLOOR_PLACETILES
 #undef INTERACTION_FLOORBOT_TOGGLE_SEARCHING
 #undef INTERACTION_FLOORBOT_TOGGLE_TILES_FABRICATION

@@ -238,7 +238,7 @@
 /obj/structure/mineral_door/transparent/phoron/proc/TemperatureAct(temperature)
 	for(var/turf/simulated/floor/target_tile in range(2, loc))
 
-		var/phoronToDeduce = temperature * 0.1
+		var/phoronToDeduce = temperature * 0.012
 
 		target_tile.assume_gas("phoron", phoronToDeduce)
 		target_tile.hotspot_expose(temperature, 400)
@@ -314,7 +314,7 @@
 	CheckHealth()
 
 /obj/structure/mineral_door/resin/attack_hand(mob/user)
-	if(isxenoadult(user) && user.a_intent == "hurt")
+	if(isxenoadult(user) && user.a_intent == INTENT_HARM)
 		user.do_attack_animation(src)
 		user.SetNextMove(CLICK_CD_MELEE)
 		health -= rand(40, 60)

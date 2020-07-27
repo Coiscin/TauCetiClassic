@@ -2,7 +2,7 @@
 
 /***************************************************************
 **						Design Datums						  **
-**	All the data for building stuff and tracking reliability. **
+**	All the data for building stuff.                          **
 ***************************************************************/
 /*
 For the materials datum, it assumes you need reagents unless specified otherwise. To designate a material that isn't a reagent,
@@ -38,12 +38,6 @@ other types of metals and chemistry for reagents).
 	var/build_path = null           //The file path of the object that gets created
 	var/list/category = null        //Primarily used for Mech Fabricators, but can be used for anything
 	var/starts_unlocked = FALSE     //If true does not require any technologies and unlocked from the start
-	var/reliability = 10            //Increased by each created prototype with formula: reliability += reliability * (RND_RELIABILITY_EXPONENT^created_prototypes)
-	var/created_prototypes = 0
-
-/datum/design/New()
-	if(starts_unlocked)
-		reliability = 100
 
 ///////////////////Computer Boards///////////////////////////////////
 
@@ -1823,6 +1817,15 @@ other types of metals and chemistry for reagents).
 	build_type = PROTOLATHE
 	materials = list(MAT_METAL = 4000)
 	build_path = /obj/item/weapon/gun/energy/taser/stunrevolver
+	category = list("Weapons")
+
+/datum/design/laserrifle
+	name = "Laser Rifle"
+	desc = "An energy weapon with concentrated energy bolts."
+	id = "laserrifle"
+	build_type = PROTOLATHE
+	materials = list (MAT_METAL = 8000, MAT_GLASS = 1000, MAT_URANIUM = 200)
+	build_path = /obj/item/weapon/gun/energy/laser
 	category = list("Weapons")
 
 /datum/design/lasercannon

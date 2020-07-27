@@ -86,17 +86,6 @@
 	efficiency_coeff = max(round(T * 0.3), 1)
 	time_coeff = round(initial(time_coeff) - (initial(time_coeff)*(T))/5,0.01)
 
-/obj/machinery/mecha_part_fabricator/check_access(obj/item/weapon/card/id/I)
-	if(istype(I, /obj/item/device/pda))
-		var/obj/item/device/pda/pda = I
-		I = pda.id
-	if(!istype(I) || !I.access) //not ID or no access
-		return 0
-	for(var/req in req_access)
-		if(!(req in I.access)) //doesn't have this access
-			return 0
-	return 1
-
 /obj/machinery/mecha_part_fabricator/emag_act(mob/user)
 	switch(emagged)
 		if(0)
@@ -181,11 +170,11 @@
 	var/I = new D.build_path(location)
 	if(isobj(I))
 		var/obj/O = I
-		O.prototipify(min_reliability=D.reliability + efficiency_coeff * 25.0,  max_reliability=70 + efficiency_coeff * 25.0)
+		O.prototipify(min_reliability=files.design_reliabilities[D.id] + efficiency_coeff * 25.0,  max_reliability=70 + efficiency_coeff * 25.0)
 
-		D.reliability += D.reliability * (RND_RELIABILITY_EXPONENT ** D.created_prototypes)
-		D.reliability = max(round(D.reliability, 5), 1)
-		D.created_prototypes++
+		files.design_reliabilities[D.id] += files.design_reliabilities[D.id] * (RND_RELIABILITY_EXPONENT ** files.design_created_prototypes[D.id])
+		files.design_reliabilities[D.id] = max(round(files.design_reliabilities[D.id], 5), 1)
+		files.design_created_prototypes[D.id]++
 	if(istype(I, /obj/item))
 		var/obj/item/Item = I
 		Item.materials[MAT_METAL] = get_resource_cost_w_coeff(D,MAT_METAL)

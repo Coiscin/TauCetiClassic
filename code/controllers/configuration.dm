@@ -70,6 +70,9 @@ var/list/net_announcer_secret = list()
 	var/load_jobs_from_txt = 0
 	var/automute_on = 0					//enables automuting/spam prevention
 
+	// If true - disable OOC for the duration of a round.
+	var/ooc_round_only = FALSE
+
 	var/registration_panic_bunker_age = null
 	var/allowed_by_bunker_player_age = 60
 	var/client_limit_panic_bunker_count = null
@@ -170,7 +173,13 @@ var/list/net_announcer_secret = list()
 	var/chat_bridge = 0
 	var/antigrief_alarm_level = 1
 	var/check_randomizer = 0
-	var/proxy_autoban = 0
+
+	var/guard_email = null
+	var/guard_enabled = FALSE
+	var/guard_autoban_treshhold = null
+	var/guard_autoban_reason = "We think you are a bad guy and block you because of this."
+	var/guard_autoban_sticky = FALSE
+	var/guard_whitelisted_country_codes = list()
 
 	var/allow_donators = 0
 	var/allow_tauceti_patrons = 0
@@ -192,7 +201,7 @@ var/list/net_announcer_secret = list()
 
 	var/record_replays = FALSE
 
-	
+
 	var/sandbox = FALSE
 	var/list/net_announcers = list() // List of network announcers on
 
@@ -316,7 +325,7 @@ var/list/net_announcer_secret = list()
 
 				if ("log_sql_error")
 					config.log_sql_error = 1
-				
+
 				if ("log_js_error")
 					config.log_js_error = 1
 
@@ -595,8 +604,23 @@ var/list/net_announcer_secret = list()
 				if("check_randomizer")
 					config.check_randomizer = value
 
-				if("proxy_autoban")
-					config.proxy_autoban = 1
+				if("guard_email")
+					config.guard_email = value
+
+				if("guard_enabled")
+					config.guard_enabled = TRUE
+
+				if("guard_autoban_treshhold")
+					config.guard_autoban_treshhold = text2num(value)
+
+				if("guard_autoban_reason")
+					config.guard_autoban_reason = value
+
+				if("guard_autoban_sticky")
+					config.guard_autoban_sticky = TRUE
+
+				if("guard_whitelisted_country_codes")
+					config.guard_whitelisted_country_codes = splittext(value, ",")
 
 				if("allow_donators")
 					config.allow_donators = 1
@@ -642,6 +666,9 @@ var/list/net_announcer_secret = list()
 
 				if("sandbox")
 					config.sandbox = TRUE
+
+				if("ooc_round_only")
+					config.ooc_round_only = TRUE
 
 				else
 					log_misc("Unknown setting in configuration: '[name]'")
@@ -879,7 +906,7 @@ var/list/net_announcer_secret = list()
 
 /datum/configuration/proc/load_announcer_config(config_path)
 	// Loading config of network communication between servers
-	// Server list loaded from serverlist.txt file. It's file with comments. 
+	// Server list loaded from serverlist.txt file. It's file with comments.
 	// One line of file = one server. Format - byond://example.com:2506 = secret
 	// First server must be self link for loading the secret
 	//

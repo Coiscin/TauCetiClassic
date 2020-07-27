@@ -26,7 +26,7 @@
 
 /obj/item/weapon/teleportation_scroll/Topic(href, href_list)
 	..()
-	if (usr.stat || usr.restrained() || src.loc != usr)
+	if (usr.incapacitated() || src.loc != usr)
 		return
 	var/mob/living/carbon/human/H = usr
 	if (!( istype(H, /mob/living/carbon/human)))
@@ -43,10 +43,12 @@
 
 	var/A
 
-	A = input(user, "Area to jump to", "BOOYEA", A) in teleportlocs
+	A = input(user, "Area to jump to", "BOOYEA", A) as null|anything in teleportlocs
+	if(!A)
+		return
 	var/area/thearea = teleportlocs[A]
 
-	if (user.stat || user.restrained())
+	if (user.incapacitated())
 		return
 	if(!((user == loc || (in_range(src, user) && istype(src.loc, /turf)))))
 		return

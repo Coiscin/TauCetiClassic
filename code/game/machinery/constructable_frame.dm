@@ -182,18 +182,18 @@
 
 				//Assemble a list of current parts, then sort them by their rating!
 				for(var/obj/item/weapon/stock_parts/co in replacer)
-					part_list += co
+					if(!co.crit_fail)
+						part_list += co
 				//Sort the parts. This ensures that higher tier items are applied first.
 				part_list = sortTim(part_list, /proc/cmp_rped_sort)
 
 				for(var/path in req_components)
 					while(req_components[path] > 0 && (locate(path) in part_list))
 						var/obj/item/part = (locate(path) in part_list)
-						if(!part.crit_fail)
-							added_components[part] = path
-							replacer.remove_from_storage(part, src)
-							req_components[path]--
-							part_list -= part
+						added_components[part] = path
+						replacer.remove_from_storage(part, src)
+						req_components[path]--
+						part_list -= part
 
 				for(var/obj/item/weapon/stock_parts/part in added_components)
 					components += part
@@ -243,7 +243,7 @@ to destroy them and players will be able to make replacements.
 	req_components = list(
 							/obj/item/weapon/vending_refill/boozeomat = 3)
 
-/obj/item/weapon/circuitboard/vendor/attackby(obj/item/I, mob/user)
+/obj/item/weapon/circuitboard/vendor/attackby(obj/item/I, mob/user, params)
 	if(isscrewdriver(I))
 		var/list/names = list(/obj/machinery/vending/boozeomat = "Booze-O-Mat",
 							/obj/machinery/vending/snack = "Getmore Chocolate Corp (Red)",
@@ -277,6 +277,8 @@ to destroy them and players will be able to make replacements.
 		name = "circuit board ([names[build_path]] Vendor)"
 		to_chat(user, "<span class='notice'>You set the board to [names[build_path]].</span>")
 		req_components = list(text2path("/obj/item/weapon/vending_refill/[copytext("[build_path]", 24)]") = 3)       //Never before has i used a method as horrible as this one, im so sorry
+		return
+	return ..()
 
 /obj/item/weapon/circuitboard/smes
 	name = "circuit board (SMES)"
@@ -412,7 +414,6 @@ to destroy them and players will be able to make replacements.
 	origin_tech = "programming=2;materials=2"
 	board_type = "machine"
 	req_components = list(
-							/obj/item/weapon/circuitboard/color_mixer = 1,
 							/obj/item/weapon/stock_parts/manipulator = 2,
 							/obj/item/stack/cable_coil = 1)
 

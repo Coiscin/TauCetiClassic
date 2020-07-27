@@ -8,6 +8,13 @@
 /datum/bodypart_controller/New(obj/item/organ/external/B)
 	BP = B
 
+	if(BP.species && BP.species.bodypart_butcher_results)
+		BP.butcher_results = BP.species.bodypart_butcher_results.Copy()
+	else if(bodypart_type == BODYPART_ORGANIC)
+		BP.butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat/human = 1)
+	else if(bodypart_type == BODYPART_ROBOTIC)
+		BP.butcher_results = list(/obj/item/stack/sheet/plasteel = 1)
+
 /datum/bodypart_controller/Destroy()
 	BP = null
 
@@ -56,7 +63,12 @@
 			burn /= 2
 
 	if(used_weapon)
-		BP.add_autopsy_data("[used_weapon]", brute + burn)
+		if(brute > 0 && burn == 0)
+			BP.add_autopsy_data("[used_weapon]", brute, type_damage = BRUTE)
+		else if(brute == 0 && burn > 0)
+			BP.add_autopsy_data("[used_weapon]", burn, type_damage = BURN)
+		else if(brute > 0 && burn > 0)
+			BP.add_autopsy_data("[used_weapon]", brute + burn, type_damage = "mixed")
 
 	var/can_cut = (prob(brute * 2) || sharp) && (bodypart_type != BODYPART_ROBOTIC)
 
@@ -559,6 +571,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	if(BP.owner.species && !BP.owner.species.flags[NO_PAIN])
 		BP.owner.emote("scream")
+
+	if((HULK in BP.owner.mutations) && BP.owner.hulk_activator == ACTIVATOR_BROKEN_BONE)
+		BP.owner.try_mutate_to_hulk()
 
 	playsound(BP.owner, pick(SOUNDIN_BONEBREAK), VOL_EFFECTS_MASTER, null, null, -2)
 	BP.status |= ORGAN_BROKEN

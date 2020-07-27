@@ -77,10 +77,9 @@
 	. = ..()
 	air_contents.adjust_gas("phoron", (3 * ONE_ATMOSPHERE) * 70 / (R_IDEAL_GAS_EQUATION * T20C))
 
-/obj/item/weapon/tank/phoron/attackby(obj/item/weapon/W, mob/user)
-	..()
-	if(istype(W, /obj/item/weapon/flamethrower))
-		var/obj/item/weapon/flamethrower/F = W
+/obj/item/weapon/tank/phoron/attackby(obj/item/I, mob/user, params)
+	if(istype(I, /obj/item/weapon/flamethrower))
+		var/obj/item/weapon/flamethrower/F = I
 		if (!F.status || F.ptank)
 			return
 
@@ -88,6 +87,8 @@
 		F.ptank = src
 		user.remove_from_mob(src)
 		forceMove(F)
+	else
+		return ..()
 
 /*
  * Emergency Oxygen
@@ -119,6 +120,26 @@
 	force = 3.0
 	icon_state = "emergency_double"
 	volume = 10
+
+/*
+ * Emergency nitrogen
+ * hi vox people!
+ */
+/obj/item/weapon/tank/emergency_nitrogen
+	name = "emergency nitrogen tank"
+	desc = "Used for Vox-related emergencies. Contains very little nitrogen, so try to conserve it until you actually need it."
+	hitsound = list('sound/items/misc/balloon_small-hit.ogg')
+	icon_state = "emergency"
+	flags = CONDUCT
+	slot_flags = SLOT_FLAGS_BELT
+	w_class = ITEM_SIZE_SMALL
+	force = 2.0
+	distribute_pressure = ONE_ATMOSPHERE * O2STANDARD
+	volume = 2
+
+/obj/item/weapon/tank/emergency_nitrogen/atom_init()
+	. = ..()
+	air_contents.adjust_gas("nitrogen", (3 * ONE_ATMOSPHERE) * volume / (R_IDEAL_GAS_EQUATION * T20C))
 
 /*
  * Nitrogen

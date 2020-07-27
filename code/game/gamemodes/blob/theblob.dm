@@ -151,13 +151,18 @@
 	update_icon()
 	return 0
 
-/obj/effect/blob/Crossed(var/mob/living/L)
-	..()
-	L.blob_act()
+/obj/effect/blob/Crossed(atom/movable/AM)
+	. = ..()
+	if(isliving(AM))
+		var/mob/living/L = AM
+		L.blob_act()
 
 
 /obj/effect/blob/attackby(obj/item/weapon/W, mob/user)
-	..()
+	if(user.a_intent != INTENT_HARM)
+		return
+
+	. = ..()
 	playsound(src, 'sound/effects/attackblob.ogg', VOL_EFFECTS_MASTER)
 	var/damage = 0
 	switch(W.damtype)
@@ -170,13 +175,12 @@
 
 	health -= damage
 	update_icon()
-	return
 
 /obj/effect/blob/attack_animal(mob/living/simple_animal/M)
 	..()
 	playsound(src, 'sound/effects/attackblob.ogg', VOL_EFFECTS_MASTER)
 	src.visible_message("<span class='danger'>The [src.name] has been attacked by \the [M].</span>")
-	var/damage = rand(M.melee_damage_lower, M.melee_damage_upper)
+	var/damage = M.melee_damage
 	if(!damage) // Avoid divide by zero errors
 		return
 	damage /= max(src.brute_resist, 1)

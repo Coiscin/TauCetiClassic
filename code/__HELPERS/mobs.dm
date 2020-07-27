@@ -20,6 +20,9 @@
 
 	return h_style
 
+/proc/random_gradient_style()
+	return pick(hair_gradients)
+
 /proc/random_ipc_monitor(ipc_head)
 	var/h_style = "Bald"
 	var/list/valid_hairstyles = list()
@@ -143,7 +146,6 @@
 			return "health-85"
 		else
 			return "health-100"
-	return "0"
 
 //helper for inverting armor blocked values into a multiplier
 #define blocked_mult(blocked) max(1 - (blocked / 100), 0)
@@ -187,14 +189,24 @@
 		if(user.loc != user_loc || target.loc != target_loc || user.incapacitated() || user.lying || (extra_checks && !extra_checks.Invoke()))
 			. = FALSE
 			break
-		if(user.hand != busy_hand)
-			if(user.get_inactive_hand() != holding)
+
+		if(HAS_TRAIT(user, TRAIT_MULTITASKING))
+			if(user.hand != busy_hand)
+				if(user.get_inactive_hand() != holding)
+					. = FALSE
+					break
+			else
+				if(user.get_active_hand() != holding)
+					. = FALSE
+					break
+		else
+			if(user.hand != busy_hand)
 				. = FALSE
 				break
-		else
 			if(user.get_active_hand() != holding)
 				. = FALSE
 				break
+
 		if(check_target_zone && user.zone_sel.selecting != check_target_zone)
 			. = FALSE
 			break
@@ -266,17 +278,27 @@
 			if(!holdingnull && QDELETED(holding))
 				. = FALSE
 				break
-			if(user.hand != busy_hand)
-				if(user.get_inactive_hand() != holding)
+
+			if(HAS_TRAIT(user, TRAIT_MULTITASKING))
+				if(user.hand != busy_hand)
+					if(user.get_inactive_hand() != holding)
+						. = FALSE
+						break
+				else
+					if(user.get_active_hand() != holding)
+						. = FALSE
+						break
+			else
+				if(user.hand != busy_hand)
 					. = FALSE
 					break
-			else
 				if(user.get_active_hand() != holding)
 					. = FALSE
 					break
+
 	if(progress)
 		qdel(progbar)
 	if(user)
 		user.become_not_busy(_hand = busy_hand)
-	if(target)
+	if(target && target != user)
 		target.in_use_action = FALSE

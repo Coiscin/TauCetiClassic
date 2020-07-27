@@ -10,8 +10,8 @@
 	role_type = ROLE_ABDUCTOR
 	required_enemies = 2
 	recommended_enemies = 2
-	required_players = 15
-	required_players_secret = 15
+	required_players = 25
+	required_players_secret = 25
 	var/max_teams = 4
 	abductor_teams = 1
 	var/list/datum/mind/scientists = list()
@@ -208,7 +208,7 @@
 	var/obj/item/device/radio/R = new /obj/item/device/radio/headset/syndicate/alt(agent)
 	R.set_frequency(radio_freq)
 	agent.equip_to_slot_or_del(R, SLOT_L_EAR)
-	agent.equip_to_slot_or_del(new /obj/item/clothing/shoes/combat(agent), SLOT_SHOES)
+	agent.equip_to_slot_or_del(new /obj/item/clothing/shoes/boots/combat(agent), SLOT_SHOES)
 	agent.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(agent), SLOT_W_UNIFORM) //they're greys gettit
 	agent.equip_to_slot_or_del(new /obj/item/weapon/storage/backpack(agent), SLOT_BACK)
 

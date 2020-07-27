@@ -13,10 +13,18 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 /proc/msg_admin_attack(msg, mob/living/target) //Toggleable Attack Messages
 	log_attack(msg)
 	msg = "<span class=\"admin\"><span class=\"prefix\">ATTACK:</span> <span class=\"message\">[msg]</span></span> [ADMIN_PPJMPFLW(target)]"
+
+
+	var/require_flags = CHAT_ATTACKLOGS
+	if(!target.client && !ishuman(target))
+		require_flags |= CHAT_NOCLIENT_ATTACK
+
 	for(var/client/C in admins)
-		if(R_ADMIN & C.holder.rights)
-			if(C.prefs.chat_toggles & CHAT_ATTACKLOGS)
-				to_chat(C, msg)
+		if(!(R_ADMIN & C.holder.rights))
+			continue
+		if((C.prefs.chat_toggles & require_flags) != require_flags)
+			continue
+		to_chat(C, msg)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////Panels
@@ -54,7 +62,7 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 		<a href='?src=\ref[src];subtlemessage=\ref[M]'>SM</a> -
 		<a href='?src=\ref[src];adminplayerobservefollow=\ref[M]'>FLW</a>\] <br>
 		<b>Mob type</b> = [M.type]<br><br>
-		<b>GeoIP:</b> <A href='?src=\ref[src];geoip=\ref[M]'>Get</A> |
+		<b>Guard:</b> <A href='?src=\ref[src];guard=\ref[M]'>Show</A> |
 		<b>List of CIDs:</b> <A href='?src=\ref[src];cid_list=\ref[M]'>Get</A> (<A href='?src=\ref[src];cid_ignore=\ref[M]'>Ignore Warning</A>)<br>
 		<b>Related accounts by IP and cid</b>: <A href='?src=\ref[src];related_accounts=\ref[M]'>Get</A><br>
 		<b>BYOND profile</b>: <A target='_blank' href='http://byond.com/members/[M.ckey]'>[M.ckey]</A><br><br>
@@ -554,21 +562,21 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 		if(6)
 			dat+="<B><FONT COLOR='maroon'>ERROR: Could not submit Feed story to Network.</B></FONT><HR><BR>"
 			if(src.admincaster_feed_channel.channel_name=="")
-				dat+="<FONT COLOR='maroon'>˜Invalid receiving channel name.</FONT><BR>"
+				dat+="<FONT COLOR='maroon'>Invalid receiving channel name.</FONT><BR>"
 			if(src.admincaster_feed_message.body == "" || src.admincaster_feed_message.body == "\[REDACTED\]")
-				dat+="<FONT COLOR='maroon'>˜Invalid message body.</FONT><BR>"
+				dat+="<FONT COLOR='maroon'>Invalid message body.</FONT><BR>"
 			dat+="<BR><A href='?src=\ref[src];ac_setScreen=[3]'>Return</A><BR>"
 		if(7)
 			dat+="<B><FONT COLOR='maroon'>ERROR: Could not submit Feed Channel to Network.</B></FONT><HR><BR>"
 			if(src.admincaster_feed_channel.channel_name =="" || src.admincaster_feed_channel.channel_name == "\[REDACTED\]")
-				dat+="<FONT COLOR='maroon'>˜Invalid channel name.</FONT><BR>"
+				dat+="<FONT COLOR='maroon'>Invalid channel name.</FONT><BR>"
 			var/check = 0
 			for(var/datum/feed_channel/FC in news_network.network_channels)
 				if(FC.channel_name == src.admincaster_feed_channel.channel_name)
 					check = 1
 					break
 			if(check)
-				dat+="<FONT COLOR='maroon'>˜Channel name already in use.</FONT><BR>"
+				dat+="<FONT COLOR='maroon'>Channel name already in use.</FONT><BR>"
 			dat+="<BR><A href='?src=\ref[src];ac_setScreen=[2]'>Return</A><BR>"
 		if(9)
 			dat+="<B>[src.admincaster_feed_channel.channel_name]: </B><FONT SIZE=1>\[created by: <FONT COLOR='maroon'>[src.admincaster_feed_channel.author]</FONT>\]</FONT><HR>"
@@ -682,9 +690,9 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 		if(16)
 			dat+="<B><FONT COLOR='maroon'>ERROR: Wanted Issue rejected by Network.</B></FONT><HR><BR>"
 			if(src.admincaster_feed_message.author =="" || src.admincaster_feed_message.author == "\[REDACTED\]")
-				dat+="<FONT COLOR='maroon'>˜Invalid name for person wanted.</FONT><BR>"
+				dat+="<FONT COLOR='maroon'>Invalid name for person wanted.</FONT><BR>"
 			if(src.admincaster_feed_message.body == "" || src.admincaster_feed_message.body == "\[REDACTED\]")
-				dat+="<FONT COLOR='maroon'>˜Invalid description.</FONT><BR>"
+				dat+="<FONT COLOR='maroon'>Invalid description.</FONT><BR>"
 			dat+="<BR><A href='?src=\ref[src];ac_setScreen=[0]'>Return</A><BR>"
 		if(17)
 			dat+={"
@@ -795,6 +803,7 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 			<A href='?src=\ref[src];secretsfun=spiders'>Trigger a Spider infestation</A><BR>
 			<A href='?src=\ref[src];secretsfun=spaceninja'>Send in a space ninja</A><BR>
 			<A href='?src=\ref[src];secretsfun=striketeam'>Send in a strike team</A><BR>
+			<A href='?src=\ref[src];secretsfun=syndstriketeam'>Send in a syndicate strike team</A><BR>
 			<A href='?src=\ref[src];secretsfun=carp'>Trigger an Carp migration</A><BR>
 			<A href='?src=\ref[src];secretsfun=radiation'>Irradiate the station</A><BR>
 			<A href='?src=\ref[src];secretsfun=prison_break'>Trigger a Prison Break</A><BR>
@@ -860,6 +869,35 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 	usr << browse(entity_ja(dat), "window=secrets")
 	return
 
+/datum/admins/proc/change_crew_salary()
+
+	var/list/crew = my_subordinate_staff("Admin")
+	var/dat
+
+	dat += "<A href='byond://?src=\ref[src];global_salary=1'>Globally change crew salaries</A><br>"
+	dat += "<small>Globally - this is a change in salary for the profession. New players will enter the round with a changed salary. To return the base salary, select 0.</small><hr>"
+	dat += "<div class='statusDisplay'>"
+	if(crew.len)
+		dat += "<table>"
+		dat += "<tr><th>Name</th><th>Rank</th><th>Salary</th><th>Control</th></tr>"
+		for(var/person in crew)
+			var/color = "silver"
+			var/datum/money_account/acc = person["acc_datum"]
+			if(acc.owner_salary > acc.base_salary)
+				color = "green"
+			else if(acc.owner_salary < acc.base_salary)
+				color = "red"
+			dat += "<tr><td><span class='highlight'>[person["name"]]</span></td><td><span class='average'>[person["rank"]]</span></td>"
+			dat += "<td><font color='[color]'><b>[person["salary"]]$</b></font></td>"
+			dat += "<td><A href='byond://?src=\ref[src];salary=\ref[person["acc_datum"]]'>Change</A></td></tr>"
+		dat += "</table>"
+	else
+		dat += "<span class='bad'>Crew not found!</span>"
+	dat += "</div>"
+
+	var/datum/browser/popup = new(usr, "window=admin_salary", "Crew Salary")
+	popup.set_content(dat)
+	popup.open()
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////admins2.dm merge
@@ -944,12 +982,12 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 
 /datum/admins/proc/toggleoocdead()
 	set category = "Server"
-	set desc="Toggle dis bitch"
-	set name="Toggle Dead OOC"
+	set desc="Toggle OOC for people in lobby(and or ghosts for some non-apparent reason)."
+	set name="Toggle Dead/Lobby OOC"
 	dooc_allowed = !( dooc_allowed )
 
-	log_admin("[key_name(usr)] toggled OOC.")
-	message_admins("[key_name_admin(usr)] toggled Dead OOC.")
+	log_admin("[key_name(usr)] toggled Dead/Lobby OOC.")
+	message_admins("[key_name_admin(usr)] toggled Dead/Lobby OOC.")
 	feedback_add_details("admin_verb","TDOOC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/admins/proc/toggletraitorscaling()
@@ -1329,6 +1367,8 @@ proc/message_admins(msg, reg_flag = R_ADMIN)
 			to_chat(usr, "<b>CYBORG [key_name(S, usr)] [R.connected_ai?"(Slaved to: [R.connected_ai])":"(Independant)"]: laws:</b>")
 		else if (ispAI(S))
 			to_chat(usr, "<b>pAI [key_name(S, usr)]'s laws:</b>")
+			var/mob/living/silicon/pai/P = S
+			to_chat(usr, "pAI's master: <b>[P.master ? P.master : "N/A"]</b>" )
 		else
 			to_chat(usr, "<b>SOMETHING SILICON [key_name(S, usr)]'s laws:</b>")
 
